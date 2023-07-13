@@ -15,6 +15,7 @@ SD.CouponAPIBase = builder.Configuration["ServiceUrls:CouponAPI"];
 
 builder.Services.AddScoped<IBaseService, BaseService>();
 builder.Services.AddScoped<ICouponService,CouponService>();
+builder.Services.AddAuthentication(CookieAuthenticatioDefault)
 
 var app = builder.Build();
 
