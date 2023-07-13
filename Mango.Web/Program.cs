@@ -1,6 +1,8 @@
 using Mango.Web.Service;
 using Mango.Web.Service.IService;
 using Mango.Web.Utility;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,14 +10,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+
+builder.Services.AddHttpClient<IProductService, ProductService>();
 builder.Services.AddHttpClient<ICouponService, CouponService>();
+builder.Services.AddHttpClient<IAuthService, AuthService>();
 
 SD.CouponAPIBase = builder.Configuration["ServiceUrls:CouponAPI"];
+SD.AuthAPIBase = builder.Configuration["ServiceUrls:AuthAPI"];
+SD.ProductAPIBase = builder.Configuration["ServiceUrls:ProductAPI"];
 
 
+builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<IBaseService, BaseService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICouponService,CouponService>();
-builder.Services.AddAuthentication(CookieAuthenticatioDefault)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(option =>
+    {
+        option.ExpireTimeSpan = TimeSpan.FromHours(10);
+        option.LoginPath = "/Auth/Login";
+        option.AccessDeniedPath = "/Auth/AccessDenied";
+    });
 
 var app = builder.Build();
 
@@ -31,7 +47,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

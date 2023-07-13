@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Mango.Services.AuthAPI.Models.Dto;
+using Mango.Services.AuthAPI.Service.IService;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Mango.Services.AuthAPI.Controllers
@@ -7,17 +9,57 @@ namespace Mango.Services.AuthAPI.Controllers
     [ApiController]
     public class AuthAPIController : ControllerBase
     {
-        [HttpPost("register")]
-        public async Task<IActionResult> Register()
+
+        private readonly IAuthService _authService;
+        protected ResponseDto _response;
+        public AuthAPIController(IAuthService authService)
         {
-            return Ok();
+            _authService = authService;
+            _response = new();
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegistrationRequestDto model)
+        {
+            var errorMessage = await _authService.Register(model);
+            if ( !string.IsNullOrEmpty(errorMessage))
+            {
+                _response.IsSuccess = false;
+                _response.Message = errorMessage;
+                return BadRequest(_response);
+            }
+
+            return Ok(_response);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> login()
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto model)
         {
-            return Ok();
+            var loginRespone = await _authService.Login(model);
+            if (loginRespone.User == null)
+            {
+                _response.IsSuccess = false;
+                _response.Message = "Username or Password is Incorrect";
+                return BadRequest(_response);
+            }
+            _response.Result = loginRespone;
+            return Ok(_response);
         }
+
+        [HttpPost("AssignRole")]
+        public async Task<IActionResult> AssignRole([FromBody] RegistrationRequestDto model)
+        {
+            var assignRoleSuccessful = await _authService.AssignRole(model.Email, model.Role.ToUpper());
+            if (!assignRoleSuccessful)
+            {
+                _response.IsSuccess = false;
+                _response.Message = "Error encountered";
+                return BadRequest(_response);
+            }
+         
+            return Ok(_response);
+        }
+
     }
 
 }
